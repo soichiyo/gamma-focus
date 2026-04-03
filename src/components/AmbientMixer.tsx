@@ -67,10 +67,10 @@ export function AmbientMixer({
             />
             <button
               onClick={() => onToggleLayer(layer.id)}
-              className={`relative h-5 w-9 rounded-full transition-colors ${isEnabled ? "bg-purple-500" : "bg-zinc-800"}`}
+              className={`relative flex-shrink-0 h-5 w-9 rounded-full transition-colors ${isEnabled ? "bg-purple-500" : "bg-zinc-800"}`}
             >
               <span
-                className={`absolute top-0.5 h-4 w-4 rounded-full transition-transform ${isEnabled ? "translate-x-4 bg-white" : "translate-x-0.5 bg-zinc-600"}`}
+                className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full transition-all duration-200 ${isEnabled ? "translate-x-[16px] bg-white" : "translate-x-0 bg-zinc-600"}`}
               />
             </button>
           </div>
