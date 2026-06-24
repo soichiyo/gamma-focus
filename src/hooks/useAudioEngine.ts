@@ -95,6 +95,30 @@ export function useAudioEngine() {
     engineRef.current?.setMasterVolume(volume);
   }, []);
 
+  // Gentle focus-recovery intervention: turn on white noise and lift it to a
+  // moderate level. Visible in the mixer and fully reversible by the user.
+  const increaseWhiteNoise = useCallback(async () => {
+    if (!settings) return;
+
+    const layerId: LayerId = "white-noise";
+    const volume = Math.max(settings.layerSettings[layerId].volume, 0.45);
+    const newSettings: PersistedSettings = {
+      ...settings,
+      layerSettings: {
+        ...settings.layerSettings,
+        [layerId]: { enabled: true, volume },
+      },
+    };
+
+    setSettings(newSettings);
+
+    const engine = engineRef.current;
+    if (engine?.isPlaying) {
+      await engine.toggleLayer(layerId, true, volume);
+      engine.setLayerVolume(layerId, volume);
+    }
+  }, [settings]);
+
   return {
     settings,
     runtime,
@@ -102,5 +126,6 @@ export function useAudioEngine() {
     toggleLayer,
     setLayerVolume,
     setMasterVolume,
+    increaseWhiteNoise,
   };
 }
