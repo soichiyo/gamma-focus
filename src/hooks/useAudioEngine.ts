@@ -119,19 +119,6 @@ export function useAudioEngine() {
     }
   }, [settings]);
 
-  // Gentle focus-recovery intervention: dip the master volume briefly, then
-  // restore it, as a soft attention reset.
-  const softReset = useCallback(() => {
-    const engine = engineRef.current;
-    if (!engine || !settings) return;
-
-    engine.setMasterVolume(Math.max(0.2, settings.masterVolume * 0.55));
-
-    window.setTimeout(() => {
-      engine.setMasterVolume(settings.masterVolume);
-    }, 1600);
-  }, [settings]);
-
   return {
     settings,
     runtime,
@@ -140,6 +127,5 @@ export function useAudioEngine() {
     setLayerVolume,
     setMasterVolume,
     increaseWhiteNoise,
-    softReset,
   };
 }

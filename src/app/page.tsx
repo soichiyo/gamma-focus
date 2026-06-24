@@ -20,7 +20,6 @@ export default function Home() {
     setLayerVolume,
     setMasterVolume,
     increaseWhiteNoise,
-    softReset,
   } = useAudioEngine();
 
   const focus = useFocusSession();
@@ -73,9 +72,6 @@ export default function Home() {
               const intervention = focus.submitCheckIn(response);
               if (intervention === "increase-white-noise") {
                 void increaseWhiteNoise();
-              }
-              if (intervention === "soft-reset") {
-                softReset();
               }
               if (intervention === "pause-for-break" && runtime.intentToPlay) {
                 void togglePlay();
