@@ -19,6 +19,7 @@ This plan was revised after an independent design + code review. Implementers mu
 - **Storage must type-check under `strict: true`** (Task 3). `filter(Boolean)` does not narrow `(FocusSession | null)[]`, and `String(status).includes(...)` does not narrow `status`. Both now use explicit type guards.
 - **Stop saves a review, not a silent discard** (Tasks 4, 6, 7, 9). Per the spec ("Save a compact review after completion or intentional stop"), Stop moves to review with a default `abandoned` outcome instead of dropping the session. Complete moves to review with a default `completed` outcome.
 - **Check-in visibility clears when there is no active session** (Task 4, minor).
+- **`soft-reset` left documented but unwired** (Task 10, post-final-review cleanup). `chooseIntervention` never returns `soft-reset`, so the `softReset` helper and its `page.tsx` branch were dead code carrying a latent stale-closure bug (restoring a captured master volume after a 1.6s dip). Both were removed. The `soft-reset` id stays in `AudioInterventionId` as documented intervention vocabulary for a future trigger (e.g. an external `distraction_detected` signal); re-add a corrected helper + trigger when it should actually fire.
 
 ---
 
