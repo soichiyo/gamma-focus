@@ -488,15 +488,16 @@ export function loadSessionState(): PersistedSessionState {
     const parsed = JSON.parse(raw);
     if (parsed?.version !== 1) return cloneDefaultState();
 
+    const rawHistory: unknown[] = Array.isArray(parsed.history) ? parsed.history : [];
+    const history = rawHistory
+      .map(sanitizeSession)
+      .filter((session): session is FocusSession => session !== null)
+      .slice(0, SESSION_HISTORY_LIMIT);
+
     return {
       version: 1,
       activeSession: sanitizeSession(parsed.activeSession),
-      history: Array.isArray(parsed.history)
-        ? parsed.history
-            .map(sanitizeSession)
-            .filter((session): session is FocusSession => session !== null)
-            .slice(0, SESSION_HISTORY_LIMIT)
-        : [],
+      history,
       coachSettings: {
         checkInIntervalMinutes: isSupportedInterval(parsed.coachSettings?.checkInIntervalMinutes)
           ? parsed.coachSettings.checkInIntervalMinutes
