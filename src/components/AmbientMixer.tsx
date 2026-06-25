@@ -62,6 +62,7 @@ export function AmbientMixer({
               max={100}
               value={Math.round(layerSettings.volume * 100)}
               onChange={(e) => onSetLayerVolume(layer.id, Number(e.target.value) / 100)}
+              aria-label={`${layer.label} volume`}
               className="h-1 w-24 cursor-pointer appearance-none rounded-full bg-zinc-800 accent-purple-500 disabled:opacity-30"
               disabled={!isEnabled}
             />

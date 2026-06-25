@@ -18,6 +18,7 @@ export function MasterVolume({ volume, onSetVolume }: MasterVolumeProps) {
         max={100}
         value={Math.round(volume * 100)}
         onChange={(e) => onSetVolume(Number(e.target.value) / 100)}
+        aria-label="Master volume"
         className="h-1 w-44 cursor-pointer appearance-none rounded-full bg-zinc-800 accent-purple-500"
       />
       <span className="font-[family-name:var(--font-geist-mono)] text-[10px] text-purple-500 w-8 text-right">
