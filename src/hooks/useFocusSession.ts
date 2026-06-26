@@ -10,17 +10,24 @@ import {
   checkpointElapsed,
   chooseIntervention,
   createFocusSession,
+  getBreakRemainingSeconds,
   getElapsedSeconds,
   getTargetSeconds,
+  isBreakDue,
   isCheckInDue,
+  markBreakEnded,
+  markBreakNotified,
   moveToReview,
   pauseSession,
   restoreActiveSession,
   resumeSession,
+  returnFromBreak,
+  startBreak,
 } from "@/session/focus-session";
 import { loadSessionState, saveSessionState } from "@/session/storage";
 import type {
   AudioInterventionId,
+  BreakDurationMinutes,
   CheckInResponse,
   FocusDuration,
   FocusSessionReview,
@@ -84,9 +91,20 @@ export function useFocusSession() {
     setIsCheckInVisible(isCheckInDue(state.activeSession, state.coachSettings, now));
   }, [now, state]);
 
+  useEffect(() => {
+    setState((prev) => {
+      if (!prev?.activeSession) return prev;
+      if (!isBreakDue(prev.activeSession.breakState, now)) return prev;
+      return { ...prev, activeSession: markBreakEnded(prev.activeSession, now) };
+    });
+  }, [now]);
+
   const activeSession = state?.activeSession ?? null;
   const elapsedSeconds = activeSession ? getElapsedSeconds(activeSession, now) : 0;
   const targetSeconds = activeSession ? getTargetSeconds(activeSession.duration) : null;
+  const breakRemainingSeconds = activeSession
+    ? getBreakRemainingSeconds(activeSession.breakState, now)
+    : null;
 
   const canStart = useMemo(() => canStartSession(missionDraft), [missionDraft]);
 
@@ -135,6 +153,28 @@ export function useFocusSession() {
     setIsCheckInVisible(false);
   }, []);
 
+  const startActiveBreak = useCallback((durationMinutes: BreakDurationMinutes) => {
+    setState((prev) => {
+      if (!prev?.activeSession) return prev;
+      return { ...prev, activeSession: startBreak(prev.activeSession, durationMinutes) };
+    });
+    setIsCheckInVisible(false);
+  }, []);
+
+  const returnToFocus = useCallback(() => {
+    setState((prev) => {
+      if (!prev?.activeSession) return prev;
+      return { ...prev, activeSession: returnFromBreak(prev.activeSession) };
+    });
+  }, []);
+
+  const markActiveBreakNotified = useCallback(() => {
+    setState((prev) => {
+      if (!prev?.activeSession) return prev;
+      return { ...prev, activeSession: markBreakNotified(prev.activeSession) };
+    });
+  }, []);
+
   // Derive the intervention from committed state BEFORE calling setState. A
   // useState updater is not guaranteed to run synchronously at dispatch time,
   // so a value mutated inside it cannot be returned reliably.
@@ -179,6 +219,7 @@ export function useFocusSession() {
     durationDraft,
     elapsedSeconds,
     targetSeconds,
+    breakRemainingSeconds,
     canStart,
     isCheckInVisible,
     reviewDefaultOutcome,
@@ -189,6 +230,9 @@ export function useFocusSession() {
     resumeActiveSession,
     completeActiveSession,
     stopActiveSession,
+    startActiveBreak,
+    returnToFocus,
+    markActiveBreakNotified,
     submitCheckIn,
     submitReview,
   };
