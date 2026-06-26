@@ -2,6 +2,18 @@ export type SessionStatus = "idle" | "running" | "paused" | "reviewing";
 
 export type FocusDuration = 15 | 25 | 45 | "open";
 
+export type BreakDurationMinutes = 3 | 5 | 10;
+
+export type BreakStatus = "idle" | "running" | "ended";
+
+export type FocusBreakState = {
+  status: BreakStatus;
+  durationMinutes: BreakDurationMinutes | null;
+  startedAt: string | null;
+  endedAt: string | null;
+  notifiedAt: string | null;
+};
+
 export type CheckInResponse = "focused" | "drifting" | "need-break";
 
 export type AudioInterventionId =
@@ -34,6 +46,7 @@ export type FocusSession = {
   pausedAt: string | null;
   completedAt: string | null;
   elapsedBeforePauseSeconds: number;
+  breakState: FocusBreakState;
   checkIns: FocusCheckIn[];
   review: FocusSessionReview | null;
 };

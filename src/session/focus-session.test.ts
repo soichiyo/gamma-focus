@@ -5,10 +5,14 @@ import {
   checkpointElapsed,
   chooseIntervention,
   createFocusSession,
+  getBreakRemainingSeconds,
   getElapsedSeconds,
+  markBreakEnded,
   pauseSession,
   restoreActiveSession,
   resumeSession,
+  returnFromBreak,
+  startBreak,
 } from "@/session/focus-session";
 import type { FocusSession } from "@/types/focus-session";
 
@@ -81,5 +85,38 @@ describe("focus session logic", () => {
     const restored = restoreActiveSession(checkpointed, new Date("2026-06-24T00:00:07.000Z"));
 
     expect(restored?.status).toBe("running");
+  });
+
+  it("starts a timed break by pausing the active session", () => {
+    const session = createFocusSession("Write plan", 25, new Date("2026-06-26T00:00:00.000Z"));
+    const breakSession = startBreak(session, 5, new Date("2026-06-26T00:02:00.000Z"));
+
+    expect(breakSession.status).toBe("paused");
+    expect(breakSession.breakState).toEqual({
+      status: "running",
+      durationMinutes: 5,
+      startedAt: "2026-06-26T00:02:00.000Z",
+      endedAt: null,
+      notifiedAt: null,
+    });
+  });
+
+  it("computes remaining break time", () => {
+    const session = createFocusSession("Write plan", 25, new Date("2026-06-26T00:00:00.000Z"));
+    const breakSession = startBreak(session, 3, new Date("2026-06-26T00:00:00.000Z"));
+
+    expect(getBreakRemainingSeconds(breakSession.breakState, new Date("2026-06-26T00:01:15.000Z"))).toBe(105);
+    expect(getBreakRemainingSeconds(breakSession.breakState, new Date("2026-06-26T00:04:00.000Z"))).toBe(0);
+  });
+
+  it("marks a due break as ended and returns to focus", () => {
+    const session = createFocusSession("Write plan", 25, new Date("2026-06-26T00:00:00.000Z"));
+    const breakSession = startBreak(session, 3, new Date("2026-06-26T00:00:00.000Z"));
+    const ended = markBreakEnded(breakSession, new Date("2026-06-26T00:03:00.000Z"));
+    const resumed = returnFromBreak(ended, new Date("2026-06-26T00:04:00.000Z"));
+
+    expect(ended.breakState.status).toBe("ended");
+    expect(resumed.status).toBe("running");
+    expect(resumed.breakState.status).toBe("idle");
   });
 });

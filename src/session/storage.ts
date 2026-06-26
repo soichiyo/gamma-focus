@@ -1,8 +1,9 @@
 import {
+  DEFAULT_BREAK_STATE,
   DEFAULT_SESSION_STATE,
   SESSION_HISTORY_LIMIT,
 } from "@/session/focus-session";
-import type { FocusSession, PersistedSessionState } from "@/types/focus-session";
+import type { BreakDurationMinutes, FocusBreakState, FocusSession, PersistedSessionState } from "@/types/focus-session";
 
 export const SESSION_STORAGE_KEY = "gamma-focus-session-state";
 
@@ -83,9 +84,34 @@ function sanitizeSession(value: unknown): FocusSession | null {
       typeof session.elapsedBeforePauseSeconds === "number"
         ? Math.max(0, session.elapsedBeforePauseSeconds)
         : 0,
+    breakState: sanitizeBreakState(session.breakState),
     checkIns: Array.isArray(session.checkIns) ? session.checkIns : [],
     review: session.review ?? null,
   };
+}
+
+function sanitizeBreakState(value: unknown): FocusBreakState {
+  if (!value || typeof value !== "object") return { ...DEFAULT_BREAK_STATE };
+  const breakState = value as Partial<FocusBreakState>;
+
+  const status =
+    breakState.status === "running" || breakState.status === "ended" || breakState.status === "idle"
+      ? breakState.status
+      : "idle";
+
+  return {
+    status,
+    durationMinutes: isBreakDuration(breakState.durationMinutes)
+      ? breakState.durationMinutes
+      : null,
+    startedAt: typeof breakState.startedAt === "string" ? breakState.startedAt : null,
+    endedAt: typeof breakState.endedAt === "string" ? breakState.endedAt : null,
+    notifiedAt: typeof breakState.notifiedAt === "string" ? breakState.notifiedAt : null,
+  };
+}
+
+function isBreakDuration(value: unknown): value is BreakDurationMinutes {
+  return value === 3 || value === 5 || value === 10;
 }
 
 function isSupportedInterval(value: unknown): value is 10 | 15 | 20 {
