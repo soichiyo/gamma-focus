@@ -1,6 +1,8 @@
 "use client";
 
 import { AmbientMixer } from "@/components/AmbientMixer";
+import { BreakDurationPicker } from "@/components/BreakDurationPicker";
+import { BreakTimer } from "@/components/BreakTimer";
 import { FocusCheckIn } from "@/components/FocusCheckIn";
 import { FocusMissionSetup } from "@/components/FocusMissionSetup";
 import { FocusReview } from "@/components/FocusReview";
@@ -10,6 +12,8 @@ import { Player } from "@/components/Player";
 import { SessionHistory } from "@/components/SessionHistory";
 import { useAudioEngine } from "@/hooks/useAudioEngine";
 import { useFocusSession } from "@/hooks/useFocusSession";
+import { usePeripheralTimerEffects } from "@/hooks/usePeripheralTimerEffects";
+import { useState } from "react";
 
 export default function Home() {
   const {
@@ -24,6 +28,13 @@ export default function Home() {
 
   const focus = useFocusSession();
 
+  const [isBreakPickerVisible, setIsBreakPickerVisible] = useState(false);
+  const peripheral = usePeripheralTimerEffects({
+    activeSession: focus.activeSession,
+    breakRemainingSeconds: focus.breakRemainingSeconds,
+    onBreakNotified: focus.markActiveBreakNotified,
+  });
+
   if (!settings || !focus.state) {
     return (
       <main className="flex min-h-screen items-center justify-center">
@@ -35,6 +46,8 @@ export default function Home() {
   const activeSession = focus.activeSession;
   const isReviewing = activeSession?.status === "reviewing";
   const isSessionActive = Boolean(activeSession) && !isReviewing;
+  const isBreakActive =
+    activeSession?.breakState.status === "running" || activeSession?.breakState.status === "ended";
 
   return (
     <main className="flex min-h-screen justify-center p-4">
@@ -54,7 +67,7 @@ export default function Home() {
           />
         )}
 
-        {isSessionActive && activeSession && (
+        {isSessionActive && activeSession && !isBreakActive && (
           <FocusTimer
             session={activeSession}
             elapsedSeconds={focus.elapsedSeconds}
@@ -66,6 +79,21 @@ export default function Home() {
           />
         )}
 
+        {isBreakActive && activeSession && (
+          <BreakTimer
+            session={activeSession}
+            remainingSeconds={focus.breakRemainingSeconds}
+            notificationPermission={peripheral.notificationPermission}
+            onRequestNotifications={() => {
+              void peripheral.requestNotifications();
+            }}
+            onReturnToFocus={() => {
+              focus.returnToFocus();
+              setIsBreakPickerVisible(false);
+            }}
+          />
+        )}
+
         {focus.isCheckInVisible && (
           <FocusCheckIn
             onSubmit={(response) => {
@@ -73,11 +101,23 @@ export default function Home() {
               if (intervention === "increase-white-noise") {
                 void increaseWhiteNoise();
               }
-              if (intervention === "pause-for-break" && runtime.intentToPlay) {
-                void togglePlay();
-                focus.pauseActiveSession();
+              if (intervention === "pause-for-break") {
+                setIsBreakPickerVisible(true);
               }
             }}
+          />
+        )}
+
+        {isBreakPickerVisible && activeSession && !isBreakActive && (
+          <BreakDurationPicker
+            onStartBreak={(durationMinutes) => {
+              focus.startActiveBreak(durationMinutes);
+              setIsBreakPickerVisible(false);
+              if (runtime.intentToPlay) {
+                void togglePlay();
+              }
+            }}
+            onCancel={() => setIsBreakPickerVisible(false)}
           />
         )}
 
