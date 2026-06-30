@@ -64,4 +64,36 @@ describe("session storage", () => {
 
     expect(state.history).toEqual([]);
   });
+
+  it("round-trips active break state", () => {
+    const session = createFocusSession("Break test", 25, new Date("2026-06-26T00:00:00.000Z"));
+    const activeBreak = {
+      ...session,
+      status: "paused" as const,
+      breakState: {
+        status: "running" as const,
+        durationMinutes: 5 as const,
+        startedAt: "2026-06-26T00:01:00.000Z",
+        endedAt: null,
+        notifiedAt: null,
+      },
+    };
+
+    saveSessionState({
+      version: 1,
+      activeSession: activeBreak,
+      history: [activeBreak],
+      coachSettings: { checkInIntervalMinutes: 15, enableAudioInterventions: true },
+    });
+
+    const state = loadSessionState();
+
+    expect(state.activeSession?.breakState).toEqual({
+      status: "running",
+      durationMinutes: 5,
+      startedAt: "2026-06-26T00:01:00.000Z",
+      endedAt: null,
+      notifiedAt: null,
+    });
+  });
 });
